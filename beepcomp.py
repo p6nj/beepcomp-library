@@ -4,6 +4,7 @@ from tkinter.filedialog import askopenfilename
 from os import path,remove
 from os.path import exists
 from math import ceil
+from copy import deepcopy
 Fo=1
 pyper=True
 musdl_=True
@@ -15,13 +16,13 @@ except ModuleNotFoundError:pyper=False
 try:from musdl import OnlineScore
 except ModuleNotFoundError:musdl_=False
 
-notes=[]
-for o in range(Fo,Fo+8):
-    for n in ascii_uppercase[2:7]+ascii_uppercase[0:2]:
-        notes.append('O'+str(o)+n)
-        if n not in ('E','B'):notes.append('O'+str(o)+n+'#')
-ref={a+24:b for a,b in enumerate(notes)}
 class note:
+    notes=[]
+    for o in range(Fo,Fo+8):
+        for n in ascii_uppercase[2:7]+ascii_uppercase[0:2]:
+            notes.append('O'+str(o)+n)
+            if n not in ('E','B'):notes.append('O'+str(o)+n+'#')
+    ref={a+24:b for a,b in enumerate(notes)}
     def __init__(self,e='off',l=0,p=60,v=0):
         self.e=e# event of the note, on or off
         self.l=l# lengh of the note
@@ -29,13 +30,13 @@ class note:
         self.v=v# velocity
         if self.e=='on' and self.v==0:self.e='off'
     def bp(self,defaultoctave=4):# pitch in the beepcomp format
-        if self.p in range(0,len(ref)):
-            if self.e=='on':return ref[self.p]# the corresponding note in the reference list
-            elif self.e=='off':return f'{ref[self.p][:2]}:'# a silence
+        if self.p in range(0,len(self.ref)):
+            if self.e=='on':return self.ref[self.p]# the corresponding note in the reference list
+            elif self.e=='off':return f'{self.ref[self.p][:2]}:'# a silence
             else:return f'O{defaultoctave}:'
         else:
             if not self.p:return f'O{defaultoctave}:'
-            assert self.p<len(ref),f"The ref dict isn't big enough : need at least {self.p+1} values."
+            assert self.p<len(self.ref),f"The ref dict isn't big enough : need at least {self.p+1} values."
             return f'O{defaultoctave}:'
     def bl(self):# lengh in beepcomp format
         if not self.l:return None
@@ -279,6 +280,71 @@ def RecursiveRLE(e,m):
             return('{'+RecursiveRLE(e[i:i+m-1],m-1)+'}')
     return(RecursiveRLE(e,m-1))
 
+def prepareMasks():
+    _notes_=note.notes[:12*2]
+    notes=[]
+    for i in range(len(_notes_)):
+        n=_notes_.pop(0)
+        if not '#' in n:notes.append(n[2:])
+    m=[1,1,0,1,1,1,0]
+    masks={}
+    for n in notes:
+        masks[n]=deepcopy(m)
+        m.append(m.pop(0))
+    return masks
+
+masks=prepareMasks()
+
+def mode(mode='C',base='C',reverse=False):
+    cursor=note.notes.index('O4'+base)
+    output=base
+    octave=4
+    mask=masks[mode]
+    print(mask)
+    if reverse:mask.reverse()
+    for step in mask:
+        if reverse:cursor-=step+1
+        else:cursor+=step+1
+        if octave!=int(note.notes[cursor][1]):output+=(-1)*(octave-int(note.notes[cursor][1]))*'>'
+        output+=note.notes[cursor][2:]
+        octave=int(note.notes[cursor][1])
+    if reverse:
+        output=output[1:]
+        if output[0]=='>':output=output[1:]
+    else:
+        output=output[:-1]
+        if output[-1]=='>':output=output[:-1]
+    return output
+
+def scale(tonality='C',reverse=False):
+    if tonality[-1]=='m':return mode('A',tonality[:-1],reverse)
+    return mode('C',tonality.replace('M',''),reverse)
+
+def chordOLD(code='C'):
+    if len(code)>1:
+        if '/' in code:first,base=code.split('/')
+        else:
+            first,base=code,code[:2]
+            if base[1]!='#':base=base[0]
+    else:first,base=code,code
+    print(first)
+    print(base)
+
+def chord(code='C'):
+    #[tonality,color,more,base]
+    fillers=['' for i in range(4)]
+    fill=0
+    color=
+    for i,c in enumerate(code):
+        if c.isnumeric() and code[i-1]=='m':
+        fillers[fill]+=c
+
+chord('Cm7')
+
+class pattern:
+    def __init__(self,string=''):
+        self.string=string
+    def scale(self):pass
 
 def filepicker(midi=True):
     print('Waiting for file...')
@@ -308,6 +374,12 @@ def output(o):
         print(f'Output written in "{npath}".')
     return ''
     #system('COLOR 0A')# attempt to change the colors of the console
+
+def compact(string):
+    output=string
+    for l,line in enumerate(output.split('\n')):
+        if line[:2]=='//' or line=='\n':output.split('\n')[l]=''
+    return output.replace(' ','').replace('\n','')
 
 def finish():
     if musdl_ and os.path.exists("temp.beepbeep"):os.remove("temp.beepbeep")
