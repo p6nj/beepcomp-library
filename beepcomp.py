@@ -295,12 +295,26 @@ def prepareMasks():
 
 masks=prepareMasks()
 
+def string2list(string):# I know how stupid it might seems but it makes things more simple
+    i=0
+    output=[]
+    while i<len(string):
+        if i!=len(string)-1 and string[i+1]=='#':
+            output.append(string[i:i+2])
+            i+=1
+        else:output.append(string[i])
+        i+=1
+    if '>' in output or '<' in output:
+        if '>' in output:index=output.index('>')
+        else:index=output.index('<')
+        output[index:index+2]=[''.join(output[index:index+2])]
+    return output
+
 def mode(mode='C',base='C',reverse=False):
     cursor=note.notes.index('O4'+base)
     output=base
     octave=4
     mask=masks[mode]
-    print(mask)
     if reverse:mask.reverse()
     for step in mask:
         if reverse:cursor-=step+1
@@ -312,7 +326,8 @@ def mode(mode='C',base='C',reverse=False):
         output=output[1:]
         if output[0]=='>':output=output[1:]
     else:
-        output=output[:-1]
+        if output[-1]=='#':output=output[:-2]
+        else:output=output[:-1]
         if output[-1]=='>':output=output[:-1]
     return output
 
@@ -320,26 +335,25 @@ def scale(tonality='C',reverse=False):
     if tonality[-1]=='m':return mode('A',tonality[:-1],reverse)
     return mode('C',tonality.replace('M',''),reverse)
 
-def chordOLD(code='C'):
-    if len(code)>1:
-        if '/' in code:first,base=code.split('/')
-        else:
-            first,base=code,code[:2]
-            if base[1]!='#':base=base[0]
-    else:first,base=code,code
-    print(first)
-    print(base)
-
 def chord(code='C'):
-    #[tonality,color,more,base]
-    fillers=['' for i in range(4)]
-    fill=0
-    color=
-    for i,c in enumerate(code):
-        if c.isnumeric() and code[i-1]=='m':
-        fillers[fill]+=c
+    tonality=''
+    more=5
+    base=''
+    color='M'
+    if 'm' in code:color='m'
+    if len(code)>1 and code[1]=='#':tonality=code[:2]
+    else:tonality=code[0]
+    if '/' in code:base=code.split('/')[-1]
+    else:base=tonality
+    if len(code)>1:
+        extract=code[1+(code[1]=='#')+(color=='m'):(code.index('/') if '/' in code else None)]
+        if extract:more=int(extract)
+    notelist=[]
+    sc=string2list(scale(tonality))
+    for n in range(0,more,2):notelist.append(sc[n])
+    return notelist
 
-chord('Cm7')
+chord('C#m7')
 
 class pattern:
     def __init__(self,string=''):
