@@ -349,15 +349,22 @@ def chord(code='C'):
         extract=code[1+(code[1]=='#')+(color=='m'):(code.index('/') if '/' in code else None)]
         if extract:more=int(extract)
     notelist=[]
-    sc=string2list(scale(tonality))
+    sc=string2list(scale(tonality+color))
+    if more>7:sc*=2
     for n in range(0,more,2):notelist.append(sc[n])
-    if base in notelist and base!=notelist[0]:
-        id=notelist.index(base)
-        for i in range(0,id):
-            notelist.append(notelist.pop(i))
+    if base in notelist:
+        if base!=notelist[0]:
+            id=notelist.index(base)
+            for i in range(0,id):
+                notelist.append(notelist.pop(i))
+    else:notelist.insert(0,base)
     return notelist
 
-#print(chord('C#m7/F'))
+#print(chord('C#9'))
+#print(scale('C#m'))
+#print(scale('C#'))
+#print(scale('Cm'))
+#print(scale('C'))
 
 class pattern:
     def __init__(self,string=''):
