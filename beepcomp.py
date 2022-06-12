@@ -351,9 +351,13 @@ def chord(code='C'):
     notelist=[]
     sc=string2list(scale(tonality))
     for n in range(0,more,2):notelist.append(sc[n])
+    if base in notelist and base!=notelist[0]:
+        id=notelist.index(base)
+        for i in range(0,id):
+            notelist.append(notelist.pop(i))
     return notelist
 
-chord('C#m7')
+#print(chord('C#m7/F'))
 
 class pattern:
     def __init__(self,string=''):
@@ -379,7 +383,7 @@ def output(o):
         c=1
         if path.isfile(npath):copy=True*(input('BeepComp .txt file already exists. Overwrite ? (y/*)')!='y')
         if copy:
-            while os.path.isfile(npath):
+            while path.isfile(npath):
                 npath='userdata/'+path.split("/")[-1].split(".")[0]+f' ({c}).txt'
                 c+=1
         file=open(npath,'w')
@@ -396,4 +400,4 @@ def compact(string):
     return output.replace(' ','').replace('\n','')
 
 def finish():
-    if musdl_ and os.path.exists("temp.beepbeep"):os.remove("temp.beepbeep")
+    if musdl_ and path.exists("temp.beepbeep"):remove("temp.beepbeep")
